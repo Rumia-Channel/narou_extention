@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site URL Sender - 設定</title>
+  <style>
+    body {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #0078d4;
+      padding-bottom: 10px;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 14px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: #0078d4;
+      box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+    }
+    textarea {
+      min-height: 300px;
+      resize: vertical;
+      font-family: 'Consolas', 'Monaco', monospace;
+      line-height: 1.6;
+    }
+    button {
+      background-color: #0078d4;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #005a9e;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      display: none;
+    }
+    .message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .hint {
+      font-size: 13px;
+      color: #666;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+    .info-box {
+      background-color: #e7f3ff;
+      border-left: 4px solid #0078d4;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    .info-box h3 {
+      margin-top: 0;
+      color: #0078d4;
+    }
+    .info-box ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .info-box li {
+      margin: 5px 0;
+    }
+    .example {
+      font-family: 'Consolas', 'Monaco', monospace;
+      background-color: #f8f8f8;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Site URL Sender - 設定</h1>
+
+    <div class="info-box">
+      <h3>使い方</h3>
+      <ul>
+        <li>対象サイトで <strong>Shift + N</strong> キーを押すと、現在のURLをサーバーに送信します</li>
+        <li>サイト設定は1行に1サイト、パイプ（|）区切りで入力してください</li>
+        <li>形式: <span class="example">対象サイトURL|正規表現パターン|置換文字列</span></li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <label for="serverUrl">サーバーURL:</label>
+      <input type="text" id="serverUrl" placeholder="https://example.com">
+      <div class="hint">例: https://example.com （末尾のスラッシュは不要）</div>
+    </div>
+
+    <div class="section">
+      <label for="siteConfigs">サイト設定:</label>
+      <textarea id="siteConfigs" placeholder="設定例は下記のデフォルト設定を参照"></textarea>
+      <div class="hint">
+        <strong>形式:</strong> 対象サイトURL|正規表現パターン|置換文字列<br>
+        <strong>デフォルト対応サイト:</strong>
+        <ul style="margin-top: 8px; margin-bottom: 0;">
+          <li>小説家になろう</li>
+          <li>ノクターンノベルズ（小説家になろう18禁）</li>
+          <li>ハーメルン</li>
+          <li>カクヨム</li>
+          <li>暁（Akatsuki Novels）</li>
+          <li>Arcadia</li>
+        </ul>
+      </div>
+    </div>
+
+    <button id="saveButton">保存</button>
+    <div class="message" id="message"></div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

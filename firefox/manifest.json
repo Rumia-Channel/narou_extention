@@ -1,0 +1,35 @@
+{
+  "manifest_version": 2,
+  "name": "Narou rb URL Sender",
+  "version": "1.0.0",
+  "description": "Send current URL to server with Shift+N on target sites",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "site-url-sender@example.com"
+    }
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
