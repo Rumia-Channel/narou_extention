@@ -1,3 +1,6 @@
+// ブラウザAPIの互換性対応
+const storageAPI = typeof browser !== 'undefined' ? browser : chrome;
+
 // 通知を表示する関数
 function showNotification(message, type = 'success') {
   // 既存の通知を削除
@@ -61,10 +64,16 @@ function showNotification(message, type = 'success') {
 
 // Shift+Nキーの監視
 document.addEventListener('keydown', async (event) => {
+  // デバッグ: すべてのShift+キーの組み合わせをログ出力
+  if (event.shiftKey) {
+    console.log('Shift key pressed with:', event.key, 'code:', event.code);
+  }
+  
   // Shift+Nキーの組み合わせをチェック
   if (event.shiftKey && event.key === 'N') {
+    console.log('Shift+N detected (before settings check)');
     // 設定を取得
-    const settings = await chrome.storage.sync.get(['serverUrl', 'siteConfigs']);
+    const settings = await storageAPI.storage.sync.get(['serverUrl', 'siteConfigs']);
     
     if (!settings.serverUrl || !settings.siteConfigs || settings.siteConfigs.length === 0) {
       return;
@@ -82,9 +91,10 @@ document.addEventListener('keydown', async (event) => {
       return;
     }
     
-    // 対象サイトの場合のみpreventDefaultを実行
-    console.log('Shift+N が検出されました');
+    // 対象サイトの場合のみpreventDefaultとstopPropagationを実行
     event.preventDefault();
+    event.stopPropagation();
+    console.log('Shift+N が検出されました');
     console.log('取得した設定:', settings);
     console.log('現在のURL:', currentUrl);
     console.log('マッチした設定:', matchedConfig);
@@ -115,33 +125,88 @@ document.addEventListener('keydown', async (event) => {
     }
     
     // サーバーにリクエストを送信
-    const requestUrl = `${settings.serverUrl}/api/download4ssl?target=${encodeURIComponent(maskedUrl)}`;
+    const serverUrl = settings.serverUrl.replace(/\/+$/, ''); // 末尾のスラッシュを削除
+    const requestUrl = `${serverUrl}/api/download_request?target=${encodeURIComponent(maskedUrl)}`;
     console.log('送信URL:', requestUrl);
     
     showNotification('送信中...', 'warning');
     
+    // バックグラウンドスクリプト経由でfetchを実行
     try {
-      const response = await fetch(requestUrl, {
-        method: 'GET',
-        mode: 'no-cors'  // CORS制限を回避
+      console.log('Sending message to background script...');
+      const response = await storageAPI.runtime.sendMessage({
+        action: 'fetchUrl',
+        url: requestUrl
       });
-      console.log('リクエスト送信完了');
-      console.log('Response type:', response.type);
       
-      // no-corsモードではレスポンスの詳細が取得できないため、成功と見なす
-      if (response.type === 'opaque') {
-        console.log('URLを送信しました（no-corsモード）:', requestUrl);
-        showNotification('URLを送信しました✓', 'success');
-      } else if (response.ok) {
-        console.log('URLを送信しました:', requestUrl);
-        showNotification('URLを送信しました✓', 'success');
-      } else {
+      console.log('Response from background:', response);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      console.log('Response headers:', response.headers);
+      
+      if (response.error) {
+        console.error('送信エラー:', response.error);
+        
+        // NetworkErrorでも実際には送信されている可能性があるため、警告として表示
+        if (response.error.includes('NetworkError') || response.error.includes('Failed to fetch')) {
+          console.warn('NetworkErrorが発生しましたが、送信は成功している可能性があります');
+          showNotification('送信しました（レスポンス確認不可）', 'warning');
+        } else {
+          showNotification('送信エラー: ' + response.error, 'error');
+        }
+        return;
+      }
+      
+      if (!response.ok) {
         console.error('送信に失敗しました:', response.status, response.statusText);
         showNotification('送信に失敗しました: ' + response.status, 'error');
+        return;
       }
+      
+      // Content-Typeを確認
+      const contentType = (response.headers && response.headers['content-type']) || '';
+      console.log('Response Content-Type:', contentType);
+      console.log('Response body:', response.body);
+        
+        // JSONレスポンスの場合
+        if (contentType.includes('application/json')) {
+          try {
+            const data = JSON.parse(response.body);
+            console.log('Parsed JSON response:', data);
+            
+            if (data.status === 1) {
+              // すでに取得済み
+              console.log('すでに取得済みです (ID:', data.id, ')');
+              showNotification('すでに取得済みです', 'warning');
+            } else if (data.status === 0) {
+              // 新規ダウンロード
+              console.log('URLを送信しました (新規):', requestUrl);
+              showNotification('URLを送信しました✓', 'success');
+            } else {
+              console.log('URLを送信しました:', requestUrl);
+              showNotification('URLを送信しました✓', 'success');
+            }
+          } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            console.log('URLを送信しました:', requestUrl);
+            showNotification('URLを送信しました✓', 'success');
+          }
+          return;
+        }
+        
+        // 画像が返ってきた場合は送信成功（旧APIの互換性）
+        if (contentType.startsWith('image/')) {
+          console.log('URLを送信しました（画像レスポンス）:', requestUrl);
+          showNotification('URLを送信しました✓', 'success');
+          return;
+        }
+        
+        // その他のレスポンス
+        console.log('URLを送信しました:', requestUrl);
+        showNotification('URLを送信しました✓', 'success');
     } catch (error) {
-      console.error('送信エラー:', error);
-      showNotification('送信エラー: ' + error.message, 'error');
+      console.error('通信エラー:', error);
+      showNotification('通信エラー: ' + error.message, 'error');
     }
   }
 });
